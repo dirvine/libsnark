@@ -16,10 +16,20 @@ if("${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
 endif()
 
 project(libsnark)
-
+# to add all tests to ctest they need located here
 set(EXECUTABLE_OUTPUT_PATH ${libsnark_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${libsnark_BINARY_DIR})
-#
+# Dependencies
+include(CheckIncludeFileCXX)
+check_include_file_cxx(gmpxx.h HAVE_GMPXX)
+if (${HAVE_GMPXX})
+  message("gmpxx found OK!")
+else()
+  message(FATAL_ERROR "could not locate gpmxx package, please install")
+endif()
+
+
+
 #compiler 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CLANG ON)
@@ -29,14 +39,17 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     set(INTEL ON)
 endif()
 
-
-
+message("To define the curve to use (-DCURVE=XXX), one of: ALT_BN128, BN128 (default), EDWARDS, MNT4, MNT6 ")
+if ("${CURVE}" STREQUAL "")
+  set(CURVE "BN128")
+endif()
 
 #options
+option(LIBCXX "Use libc++ (clang), default on APPLE" OFF)
+option(LIBCXXABI "Use libc++abi (clang), if linked against libc++" OFF)
 option(BINARY_OUTPUT "in serialization, output raw binary data (instead of decimal, when not set)" OFF) 
-option(CURVE "Define curve to use, one of: ALT_BN128, BN128, EDWARDS, MNT4, MNT6 " BN_128)
 option(LOWMEM "Limit the size of multi-exponentiation tables, for low-memory platforms" OFF)
-option(MINDPES "Rely on a minimum amount of external libraries (at the cost of some functionality). In particular, do not rely on boost::program_options and libprocps" OFF)
+option(MINDEPS "Rely on a minimum amount of external libraries (at the cost of some functionality). In particular, do not rely on boost::program_options and libprocps" ON)
 option(MULTICORE "Enable parallelized execution of the ppzkSNARK generator and prover, using OpenMP." OFF)
 option(NO_PT_COMPRESSION "Do not use point compression. This gives much faster serialization times, at the expense of ~2x larger sizes for serialized keys and proofs" OFF)
 option(PROFILE_OP_COUNTS "Collect counts for field and curve operations inside static variables of the corresponding algebraic objects. This option works for all curves except bn128." ON)
@@ -44,22 +57,37 @@ option(USE_ASM "Use unrolled assembly routines for Fp arithmetic and faster heap
 option(PERFORMANCE "Enables various compiler optimizations for the current CPU, and disables debugging aids." ON)
 
 
-add_definitions(-DCURVE_BN128)
-# add_definitions(-DUSE_ASM)
-add_definitions(-DMINDEPS)
+add_definitions("-DCURVE_${CURVE}")
+
+if ("${USE_ASM}")
+  add_definitions(-DUSE_ASM)
+endif()
+
+if ("${MINDEPS}")
+  add_definitions(-DMINDEPS)
+else()
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lprocps")
+endif()
+
 
 
 #compiler settings
-if (GCC OR INTEL)
+if (NOT "${CLANG}")
   set(OMP "-fopenmp")
 endif()
-if(LIBCXX OR APPLE)
+
+if("${LIBCXX}" OR APPLE)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
+endif()
+
+if(LIBCXXABI)
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lc++abi")
 endif()
 
 if(UNIX)  
-  set(CMAKE_CXX_FLAGS "-O2 -Wall -Wextra -Wno-unused-parameter -Wno-comment -march=native -mtune=native -std=c++11 ${OMP}  -fno-operator-names")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -Wextra -Wno-unused-parameter") 
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-comment -march=native -mtune=native -std=c++11 ${OMP}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-operator-names")
 endif()
 
 # Create json database, used by many tools (vim, clang-format etc.)

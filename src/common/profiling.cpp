@@ -271,6 +271,7 @@ double get_time()
 void print_mem(const std::string &s)
 {
 #ifndef MINDEPS
+#include "proc/readproc.h"
     struct proc_t usage;
     look_up_our_self(&usage);
     if (s.empty())

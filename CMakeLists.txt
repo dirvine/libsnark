@@ -19,7 +19,7 @@ project(libsnark)
 
 set(EXECUTABLE_OUTPUT_PATH ${libsnark_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${libsnark_BINARY_DIR})
-
+#
 #compiler 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CLANG ON)
@@ -122,3 +122,7 @@ add_executable(gadgetlib_test
 target_link_libraries(ppzsnark_profile zksnark gmpxx gmp)
 target_link_libraries(tutorial zksnark gtest gmpxx gmp )
 target_link_libraries(gadgetlib_test zksnark gtest gmpxx gmp)
+
+include(CTest)
+add_test(NAME sample1_unittest COMMAND sample1_unittest)
+

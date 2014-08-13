@@ -54,7 +54,7 @@ option(MULTICORE "Enable parallelized execution of the ppzkSNARK generator and p
 option(NO_PT_COMPRESSION "Do not use point compression. This gives much faster serialization times, at the expense of ~2x larger sizes for serialized keys and proofs" OFF)
 option(PROFILE_OP_COUNTS "Collect counts for field and curve operations inside static variables of the corresponding algebraic objects. This option works for all curves except bn128." ON)
 option(USE_ASM "Use unrolled assembly routines for Fp arithmetic and faster heap in multi-exponentiation. " OFF) 
-option(PERFORMANCE "Enables various compiler optimizations for the current CPU, and disables debugging aids." ON)
+option(PERFORMANCE "Enables various compiler optimizations for the current CPU, and disables debugging aids." OFF)
 
 
 add_definitions("-DCURVE_${CURVE}")
